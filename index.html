@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Music Display</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="music-container">
+    <img src="Sunflowers.jpg" alt="Album Cover" class="album-art" />
+    <div class="music-info">
+      <h2>Ishq Hai</h2>
+      <p>Anurag Saikia, Romy, Amarabha Banerjee</p>
+    </div>
+    <button id="play-pause-btn" class="play-btn">
+      <svg class="play-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 5V19L19 12L8 5Z" fill="#ffffff"/>
+      </svg>
+      <svg class="pause-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:none;">
+        <path d="M6 5H10V19H6V5ZM14 5H18V19H14V5Z" fill="#ffffff"/>
+      </svg>
+    </button>
+    <audio id="audio" src="IshqHai.mp3"></audio>
+    <canvas id="waveform"></canvas>
+  </div>
+
+  <script>
+    const audio = document.getElementById('audio');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const playIcon = document.querySelector('.play-icon');
+    const pauseIcon = document.querySelector('.pause-icon');
+    const canvas = document.getElementById('waveform');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = 500;
+    canvas.height = 100;
+
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioContext.createAnalyser();
+    const source = audioContext.createMediaElementSource(audio);
+
+    source.connect(analyser);
+    analyser.connect(audioContext.destination);
+    analyser.fftSize = 256;
+
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    function togglePlayPause() {
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+
+      if (audio.paused) {
+        audio.play();
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+        animateWaveform();
+      } else {
+        audio.pause();
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+      }
+    }
+
+    playPauseBtn.addEventListener('click', togglePlayPause);
+
+    function animateWaveform() {
+      requestAnimationFrame(animateWaveform);
+      analyser.getByteFrequencyData(dataArray);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const barWidth = (canvas.width / bufferLength) * 2.5;
+      let barHeight;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        barHeight = dataArray[i];
+        ctx.fillStyle = `rgb(255, ${150 + barHeight / 2}, 0)`;
+        ctx.fillRect(x, canvas.height - barHeight / 2, barWidth, barHeight / 2);
+        x += barWidth + 1;
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #ffffff;
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .music-container {
+      background-color: #fff7f0;
+      padding: 20px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+      flex-direction: column;
+    }
+
+    .album-art {
+      width: 100px;
+      height: 100px;
+      border-radius: 12px;
+    }
+
+    .music-info h2 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    .music-info p {
+      margin: 5px 0 0;
+      color: #555;
+    }
+
+    .play-btn {
+      width: 60px;
+      height: 60px;
+      background-color: #ff6600;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    svg {
+      fill: white;
+    }
+
+    canvas {
+      width: 500px;
+      height: 100px;
+      background-color: #fff;
+      border-radius: 8px;
+      border: 1px solid #ff6600;
+    }
+  </style>
+</body>
+</html>
